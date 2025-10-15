@@ -20,12 +20,12 @@ HIDE_EMPTY_REPOS=0
 # Help menu function
 print_help() {
     cat <<EOF
-Usage: $0 [days_threshold] [group_id] [--markdown] [--hide-empty] [-h|--help]
+Usage: $0 [--days N] [group_id] [--markdown] [--hide-empty] [-h|--help]
 
 Find stale branches across GitLab repositories.
 
 Options:
-    days_threshold   Number of days to consider a branch stale (default: 90)
+    --days N         Number of days to consider a branch stale (default: 90)
     group_id         GitLab group path (default: premise-health/premise-development)
     --markdown       Output report in markdown format (default: terminal)
     --hide-empty     Do not display repositories with no stale branches found
@@ -35,6 +35,9 @@ Examples:
     # Basic usage (default: 90 days, terminal output, default group)
     $0
 
+    # Set days threshold with flag
+    $0 --days 120
+
     # Hide repos with no stale branches
     $0 --hide-empty
 
@@ -42,7 +45,7 @@ Examples:
     $0 --markdown
 
     # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
-    $0 --markdown --hide-empty 60
+    $0 --markdown --hide-empty --days 60
 EOF
 }
 
@@ -72,6 +75,10 @@ while [[ $# -gt 0 ]]; do
         --hide-empty)
             HIDE_EMPTY_REPOS=1
             shift
+            ;;
+        --days)
+            DAYS_THRESHOLD="$2"
+            shift 2
             ;;
         [0-9]*)
             DAYS_THRESHOLD="$1"
