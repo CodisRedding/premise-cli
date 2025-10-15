@@ -13,7 +13,8 @@ DEFAULT_GROUP_PATH="premise-health/premise-development"
 DEFAULT_GROUP_ID="109214032"
 GROUP_PATH="$DEFAULT_GROUP_PATH"
 GROUP_ID=""
-
+SEARCH_STRING=""
+COMMAND_EXECUTED="$0 $@"
 
 # Help menu function
 print_help() {
@@ -62,6 +63,10 @@ while [[ $# -gt 0 ]]; do
             GROUP_ID="$2"
             shift 2
             ;;
+        --search)
+            SEARCH_STRING="$2"
+            shift 2
+            ;;
         [0-9]*)
             DAYS_THRESHOLD="$1"
             shift
@@ -72,6 +77,7 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
 
 # Set default group id if neither group nor group-id is provided
 if [ "$GROUP_PATH" = "$DEFAULT_GROUP_PATH" ] && [ -z "$GROUP_ID" ]; then
@@ -196,7 +202,11 @@ check_repo_branches() {
     fi
 
     # Collect branch name and commit date, sort by commit date descending
-    sorted_branches=$(echo "$branches" | jq -r '.[] | select(.name != "main" and .name != "master") | "\(.name)|\(.commit.committed_date)"' | sort -t'|' -k2,2r)
+    if [ -n "$SEARCH_STRING" ]; then
+        sorted_branches=$(echo "$branches" | jq -r ".[] | select(.name != \"main\" and .name != \"master\" and (.name | test(\"$SEARCH_STRING\"))) | \"\(.name)|\(.commit.committed_date)\"" | sort -t'|' -k2,2r)
+    else
+        sorted_branches=$(echo "$branches" | jq -r '.[] | select(.name != "main" and .name != "master") | "\(.name)|\(.commit.committed_date)"' | sort -t'|' -k2,2r)
+    fi
 
     stale_branches=()
     while IFS='|' read -r branch_name commit_date; do
@@ -257,7 +267,13 @@ if [ "$OUTPUT_FORMAT" = "markdown" ]; then
     echo "# Stale Branches Report" > "$MARKDOWN_FILE"
     echo "_Generated on $(date '+%Y-%m-%d %H:%M:%S')_" >> "$MARKDOWN_FILE"
     echo "" >> "$MARKDOWN_FILE"
+    echo "**Command Used:**" >> "$MARKDOWN_FILE"
+    echo "\`${COMMAND_EXECUTED}\`" >> "$MARKDOWN_FILE"
+    echo "" >> "$MARKDOWN_FILE"
     echo "**Threshold:** Branches older than ${DAYS_THRESHOLD} days (before ${THRESHOLD_DATE})" >> "$MARKDOWN_FILE"
+    if [ -n "$SEARCH_STRING" ]; then
+        echo " | Search: \`${SEARCH_STRING}\`" >> "$MARKDOWN_FILE"
+    fi
     echo "" >> "$MARKDOWN_FILE"
 fi
 
