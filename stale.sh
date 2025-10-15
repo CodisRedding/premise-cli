@@ -9,7 +9,8 @@ REPORTS_DIR="reports"
 OUTPUT_FORMAT="terminal"
 MARKDOWN_FILE="stale-branches-report.md"
 DAYS_THRESHOLD=90
-GROUP_PATH="premise-health/premise-development"
+DEFAULT_GROUP_PATH="premise-health/premise-development"
+GROUP_PATH="$DEFAULT_GROUP_PATH"
 
 
 
@@ -51,6 +52,10 @@ while [[ $# -gt 0 ]]; do
         --markdown)
             OUTPUT_FORMAT="markdown"
             shift
+            ;;
+        --group)
+            GROUP_PATH="$2"
+            shift 2
             ;;
         [0-9]*)
             DAYS_THRESHOLD="$1"
