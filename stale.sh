@@ -9,7 +9,7 @@ REPORTS_DIR="reports"
 OUTPUT_FORMAT="terminal"
 MARKDOWN_FILE="stale-branches-report.md"
 DAYS_THRESHOLD=90
-GROUP_ID=""
+GROUP_PATH="premise-health/premise-development"
 
 
 
@@ -57,7 +57,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            GROUP_ID="$1"
+            GROUP_PATH="$1"
             shift
             ;;
     esac
@@ -221,13 +221,7 @@ check_repo_branches() {
 
 echo "🏁 Scan complete!"
 # Main execution
-
-# Fetch all projects from the group and subgroups using glab (no --paginate)
-GROUP_PATH="premise-health/premise-development"
-GROUP_PATH_ENCODED="premise-health%2Fpremise-development"
-if [ "$OUTPUT_FORMAT" = "terminal" ]; then
-    echo "🏢 Scanning group: $GROUP_PATH"
-fi
+GROUP_PATH_ENCODED="$(echo "$GROUP_PATH" | sed 's/\//%2F/g')"
 repos=$(glab api --paginate "groups/${GROUP_PATH_ENCODED}/projects?include_subgroups=true")
 
 if [ $? -ne 0 ]; then
