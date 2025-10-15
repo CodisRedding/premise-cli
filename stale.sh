@@ -12,14 +12,46 @@ DAYS_THRESHOLD=90
 GROUP_ID=""
 
 
+
+# Help menu function
+print_help() {
+        cat <<EOF
+Usage: $0 [days_threshold] [group_id] [--markdown] [-h|--help]
+
+Find stale branches across GitLab repositories.
+
+Options:
+    days_threshold   Number of days to consider a branch stale (default: 90)
+    group_id         GitLab group path (default: premise-health/premise-development)
+    --markdown       Output report in markdown format (default: terminal)
+    -h, --help       Show this help menu and exit
+
+Examples:
+    # Basic usage (default: 90 days, terminal output, default group)
+    $0
+
+    # Specify days threshold (e.g., branches older than 120 days)
+    $0 120
+
+    # Output as markdown report (saved in reports/)
+    $0 --markdown
+
+    # Combine options (e.g., markdown report for branches older than 60 days)
+    $0 --markdown 60
+EOF
+}
+
 # Parse options and positional arguments robustly
 while [[ $# -gt 0 ]]; do
     case $1 in
+        -h|--help)
+            print_help
+            exit 0
+            ;;
         --markdown)
             OUTPUT_FORMAT="markdown"
             shift
             ;;
-        # --markdown-file option removed
         [0-9]*)
             DAYS_THRESHOLD="$1"
             shift
