@@ -55,8 +55,8 @@ This will print a help menu describing all available options, defaults, and exam
 
 ## Requirements
 
-- Bash (for running `stale.sh`)
 - Git installed and accessible in your PATH
+- [jq](https://stedolan.github.io/jq/) (JSON processor) installed and accessible in your PATH
 - [glab](https://github.com/profclems/glab) (GitLab CLI) installed and accessible in your PATH
 
 ## Contributing
