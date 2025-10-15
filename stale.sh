@@ -49,6 +49,7 @@ check_repo_branches() {
 
     # Parse branches and check commit dates
     stale_output=""
+    stale_branches=()
     while IFS='|' read -r branch_name commit_date; do
         if [ -n "$commit_date" ]; then
             commit_timestamp=$(COMMIT_EPOCH "$commit_date")
@@ -56,7 +57,13 @@ check_repo_branches() {
             if [[ "$commit_timestamp" =~ ^[0-9]+$ ]] && [[ "$threshold_timestamp" =~ ^[0-9]+$ ]]; then
                 if [ "$commit_timestamp" -lt "$threshold_timestamp" ]; then
                     days_old=$(( ($(date +%s) - commit_timestamp) / 86400 ))
-                    stale_output+="   🕰️  STALE: ${branch_name} (${days_old} days old, last commit: ${commit_date})\n"
+                        RED='\033[0;31m'
+                        LIGHTYELLOW='\033[1;33m'
+                        NC='\033[0m'
+                        # Extract only the date part (YYYY-MM-DD) from commit_date
+                        commit_date_only=$(echo "$commit_date" | cut -d'T' -f1)
+                        stale_output+="   🕰️  STALE: ${RED}${branch_name}${NC} (${LIGHTYELLOW}${days_old} days old${NC}, last commit: ${commit_date_only})\n"
+                    stale_branches+=("$branch_name")
                     found_stale=1
                 fi
             fi
@@ -65,6 +72,16 @@ check_repo_branches() {
 
     if [ "$found_stale" -eq 1 ]; then
         echo -e "$stale_output"
+        if [ ${#stale_branches[@]} -gt 0 ]; then
+            local_branches=$(printf "%s " "${stale_branches[@]}")
+            remote_branches=$(printf "%s " "${stale_branches[@]}")
+            GREEN='\033[1;32m'
+            NC='\033[0m'
+            echo "     # delete local and remote branches then prune remote-tracking branch (like origin/feature-xyz):"
+            echo -e "     ${GREEN}git branch -D $local_branches && git push origin --delete $remote_branches && git fetch --prune${NC}"
+            echo "     # delete remote branches only then prune remote-tracking branch (like origin/feature-xyz):"
+            echo -e "     ${GREEN}git push origin --delete $remote_branches && git fetch --prune${NC}"
+        fi
     else
         echo "   ✅ No stale branches found"
     fi
