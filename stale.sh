@@ -15,11 +15,12 @@ GROUP_PATH="$DEFAULT_GROUP_PATH"
 GROUP_ID=""
 SEARCH_STRING=""
 COMMAND_EXECUTED="$0 $@"
+HIDE_EMPTY_REPOS=0
 
 # Help menu function
 print_help() {
-        cat <<EOF
-Usage: $0 [days_threshold] [group_id] [--markdown] [-h|--help]
+    cat <<EOF
+Usage: $0 [days_threshold] [group_id] [--markdown] [--hide-empty] [-h|--help]
 
 Find stale branches across GitLab repositories.
 
@@ -27,20 +28,21 @@ Options:
     days_threshold   Number of days to consider a branch stale (default: 90)
     group_id         GitLab group path (default: premise-health/premise-development)
     --markdown       Output report in markdown format (default: terminal)
+    --hide-empty     Do not display repositories with no stale branches found
     -h, --help       Show this help menu and exit
 
 Examples:
     # Basic usage (default: 90 days, terminal output, default group)
     $0
 
-    # Specify days threshold (e.g., branches older than 120 days)
-    $0 120
+    # Hide repos with no stale branches
+    $0 --hide-empty
 
     # Output as markdown report (saved in reports/)
     $0 --markdown
 
-    # Combine options (e.g., markdown report for branches older than 60 days)
-    $0 --markdown 60
+    # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
+    $0 --markdown --hide-empty 60
 EOF
 }
 
@@ -66,6 +68,10 @@ while [[ $# -gt 0 ]]; do
         --search)
             SEARCH_STRING="$2"
             shift 2
+            ;;
+        --hide-empty)
+            HIDE_EMPTY_REPOS=1
+            shift
             ;;
         [0-9]*)
             DAYS_THRESHOLD="$1"
@@ -141,11 +147,12 @@ format_terminal_repo() {
             echo " && \\"
             echo -e "     git fetch --prune${NC}"
         fi
-    else
+        echo ""
+    elif [ "$HIDE_EMPTY_REPOS" -ne 1 ]; then
         echo "📁 Checking repository: ${repo_name}"
         echo "   ✅ No stale branches found"
+        echo ""
     fi
-    echo ""
 }
 
 # Output formatter: markdown
@@ -170,7 +177,7 @@ format_markdown_repo() {
             echo "git fetch --prune" >> "$MARKDOWN_FILE"
             echo -e "\`\`\`\n" >> "$MARKDOWN_FILE"
         fi
-    else
+    elif [ "$HIDE_EMPTY_REPOS" -ne 1 ]; then
         echo -e "## Repository: $repo_name\n" >> "$MARKDOWN_FILE"
         echo -e "✅ No stale branches found\n" >> "$MARKDOWN_FILE"
     fi
