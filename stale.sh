@@ -108,31 +108,17 @@ format_terminal_repo() {
     if [ "$found_stale" -eq 1 ]; then
         echo "📁 Checking repository: ${repo_name}"
         echo -e "$stale_output"
-        if [ -n "$local_branches" ]; then
+        if [ -n "$remote_branches" ]; then
             GREEN='\033[1;32m'
             NC='\033[0m'
-            echo "     # delete local and remote branches then prune remote-tracking branch (like origin/feature-xyz):"
-            echo -ne "     ${GREEN}git branch -D"
-            for branch in ${local_branches}; do
-                echo " \\"
-                echo -n "       $branch"
-            done
-            echo " && \\"
-            echo -n "     git push origin --delete"
+            echo "     # delete remote branches"
+            echo -ne "     ${GREEN}git push origin --delete"
             for branch in ${remote_branches}; do
                 echo " \\"
                 echo -n "       $branch"
             done
             echo " && \\"
             echo -e "     git fetch --prune${NC}"
-            # echo "     # delete remote branches only then prune remote-tracking branch (like origin/feature-xyz):"
-            # echo -ne "     ${GREEN}git push origin --delete"
-            # for branch in ${remote_branches}; do
-            #     echo " \\"
-            #     echo -n "       $branch"
-            # done
-            # echo " && \\"
-            # echo -e "     git fetch --prune${NC}"
         fi
     else
         echo "📁 Checking repository: ${repo_name}"
@@ -151,15 +137,9 @@ format_markdown_repo() {
     if [ "$found_stale" -eq 1 ]; then
         echo -e "## Repository: $repo_name\n" >> "$MARKDOWN_FILE"
         echo -e "$stale_output" >> "$MARKDOWN_FILE"
-        if [ -n "$local_branches" ]; then
-            echo -e "**Delete local and remote branches, then prune remote-tracking branches:**" >> "$MARKDOWN_FILE"
+        if [ -n "$remote_branches" ]; then
+            echo -e "**Delete remote branches, then prune remote-tracking branches:**" >> "$MARKDOWN_FILE"
             echo -e "\n\`\`\`bash" >> "$MARKDOWN_FILE"
-            echo -n "git branch -D" >> "$MARKDOWN_FILE"
-            for branch in ${local_branches}; do
-                echo " \\" >> "$MARKDOWN_FILE"
-                echo -n "  $branch" >> "$MARKDOWN_FILE"
-            done
-            echo " && \\" >> "$MARKDOWN_FILE"
             echo -n "git push origin --delete" >> "$MARKDOWN_FILE"
             for branch in ${remote_branches}; do
                 echo " \\" >> "$MARKDOWN_FILE"
@@ -200,6 +180,9 @@ check_repo_branches() {
         return
     fi
 
+    # Collect branch name and commit date, sort by commit date descending
+    sorted_branches=$(echo "$branches" | jq -r '.[] | select(.name != "main" and .name != "master") | "\(.name)|\(.commit.committed_date)"' | sort -t'|' -k2,2r)
+
     stale_branches=()
     while IFS='|' read -r branch_name commit_date; do
         if [ -n "$commit_date" ]; then
@@ -219,7 +202,7 @@ check_repo_branches() {
                 fi
             fi
         fi
-    done < <(echo "$branches" | jq -r '.[] | select(.name != "main" and .name != "master") | "\(.name)|\(.commit.committed_date)"')
+    done <<< "$sorted_branches"
 
     if [ ${#stale_branches[@]} -gt 0 ]; then
         local_branches=$(printf "%s " "${stale_branches[@]}")
