@@ -10,8 +10,9 @@ OUTPUT_FORMAT="terminal"
 MARKDOWN_FILE="stale-branches-report.md"
 DAYS_THRESHOLD=90
 DEFAULT_GROUP_PATH="premise-health/premise-development"
+DEFAULT_GROUP_ID="109214032"
 GROUP_PATH="$DEFAULT_GROUP_PATH"
-
+GROUP_ID=""
 
 
 # Help menu function
@@ -57,6 +58,10 @@ while [[ $# -gt 0 ]]; do
             GROUP_PATH="$2"
             shift 2
             ;;
+        --group-id)
+            GROUP_ID="$2"
+            shift 2
+            ;;
         [0-9]*)
             DAYS_THRESHOLD="$1"
             shift
@@ -67,6 +72,11 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Set default group id if neither group nor group-id is provided
+if [ "$GROUP_PATH" = "$DEFAULT_GROUP_PATH" ] && [ -z "$GROUP_ID" ]; then
+    GROUP_ID="$DEFAULT_GROUP_ID"
+fi
 
 # Set timestamped markdown file in reports dir if markdown output
 if [ "$OUTPUT_FORMAT" = "markdown" ]; then
@@ -226,8 +236,12 @@ check_repo_branches() {
 
 echo "🏁 Scan complete!"
 # Main execution
-GROUP_PATH_ENCODED="$(echo "$GROUP_PATH" | sed 's/\//%2F/g')"
-repos=$(glab api --paginate "groups/${GROUP_PATH_ENCODED}/projects?include_subgroups=true")
+if [ -n "$GROUP_ID" ]; then
+    GROUP_REF="$GROUP_ID"
+else
+    GROUP_REF="$(echo "$GROUP_PATH" | sed 's/\//%2F/g')"
+fi
+repos=$(glab api --paginate "groups/${GROUP_REF}/projects?include_subgroups=true")
 
 if [ $? -ne 0 ]; then
     if [ "$OUTPUT_FORMAT" = "markdown" ]; then
