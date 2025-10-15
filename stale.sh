@@ -183,7 +183,7 @@ check_repo_branches() {
     NC='\033[0m'
 
     # Get all branches for the repository
-    branches=$(glab api "projects/${repo_id}/repository/branches")
+    branches=$(glab api --paginate "projects/${repo_id}/repository/branches")
     if [ $? -ne 0 ]; then
         if [ "$OUTPUT_FORMAT" = "markdown" ]; then
             echo -e "## Repository: $repo_name\n" >> "$MARKDOWN_FILE"
