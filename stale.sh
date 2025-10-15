@@ -35,19 +35,19 @@ Options:
 
 Examples:
     # Basic usage (default: 90 days, terminal output, default group)
-    $0
+    ./stale.sh
 
     # Set days threshold with flag
-    $0 -d 120
+    ./stale.sh -d 120
 
     # Hide repos with no stale branches
-    $0 -e
+    ./stale.sh -e
 
     # Output as markdown report (saved in reports/)
-    $0 -m
+    ./stale.sh -m
 
     # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
-    $0 -m -e -d 60
+    ./stale.sh -m -e -d 60
 EOF
 }
 
