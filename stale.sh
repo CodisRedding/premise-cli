@@ -5,11 +5,12 @@
 
 
 
-# Output format: 'terminal' (default) or 'markdown'
+REPORTS_DIR="reports"
 OUTPUT_FORMAT="terminal"
 MARKDOWN_FILE="stale-branches-report.md"
 DAYS_THRESHOLD=90
 GROUP_ID=""
+
 
 # Parse options and positional arguments robustly
 while [[ $# -gt 0 ]]; do
@@ -18,11 +19,7 @@ while [[ $# -gt 0 ]]; do
             OUTPUT_FORMAT="markdown"
             shift
             ;;
-        --markdown-file)
-            OUTPUT_FORMAT="markdown"
-            MARKDOWN_FILE="$2"
-            shift 2
-            ;;
+        # --markdown-file option removed
         [0-9]*)
             DAYS_THRESHOLD="$1"
             shift
@@ -33,6 +30,13 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Set timestamped markdown file in reports dir if markdown output
+if [ "$OUTPUT_FORMAT" = "markdown" ]; then
+    mkdir -p "$REPORTS_DIR"
+    TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
+    MARKDOWN_FILE="${REPORTS_DIR}/${TIMESTAMP}-stale-branches-report.md"
+fi
 
 # Calculate threshold date
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -223,8 +227,10 @@ fi
 # If markdown, clear the file and add a header
 if [ "$OUTPUT_FORMAT" = "markdown" ]; then
     echo "# Stale Branches Report" > "$MARKDOWN_FILE"
-    echo "_Generated on $(date '+%Y-%m-%d %H:%M:%S')_
-" >> "$MARKDOWN_FILE"
+    echo "_Generated on $(date '+%Y-%m-%d %H:%M:%S')_" >> "$MARKDOWN_FILE"
+    echo "" >> "$MARKDOWN_FILE"
+    echo "**Threshold:** Branches older than ${DAYS_THRESHOLD} days (before ${THRESHOLD_DATE})" >> "$MARKDOWN_FILE"
+    echo "" >> "$MARKDOWN_FILE"
 fi
 
 # Process each repository
@@ -235,6 +241,5 @@ done
 if [ "$OUTPUT_FORMAT" = "terminal" ]; then
     echo "🏁 Scan complete!"
 else
-    echo "\n---\n" >> "$MARKDOWN_FILE"
     echo "Report saved to $MARKDOWN_FILE"
 fi
