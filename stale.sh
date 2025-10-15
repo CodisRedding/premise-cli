@@ -228,7 +228,7 @@ GROUP_PATH_ENCODED="premise-health%2Fpremise-development"
 if [ "$OUTPUT_FORMAT" = "terminal" ]; then
     echo "🏢 Scanning group: $GROUP_PATH"
 fi
-repos=$(glab api "groups/${GROUP_PATH_ENCODED}/projects?include_subgroups=true")
+repos=$(glab api --paginate "groups/${GROUP_PATH_ENCODED}/projects?include_subgroups=true")
 
 if [ $? -ne 0 ]; then
     if [ "$OUTPUT_FORMAT" = "markdown" ]; then
