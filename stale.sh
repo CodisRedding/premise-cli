@@ -132,16 +132,6 @@ format_markdown_repo() {
             echo " && \\" >> "$MARKDOWN_FILE"
             echo "git fetch --prune" >> "$MARKDOWN_FILE"
             echo -e "\`\`\`\n" >> "$MARKDOWN_FILE"
-            # echo -e "**Delete remote branches, then prune remote-tracking branches:**" >> "$MARKDOWN_FILE"
-            # echo -e "\n\`\`\`bash" >> "$MARKDOWN_FILE"
-            # echo -n "git push origin --delete" >> "$MARKDOWN_FILE"
-            # for branch in ${remote_branches}; do
-            #     echo " \\" >> "$MARKDOWN_FILE"
-            #     echo -n "  $branch" >> "$MARKDOWN_FILE"
-            # done
-            # echo " && \\" >> "$MARKDOWN_FILE"
-            # echo "git fetch --prune" >> "$MARKDOWN_FILE"
-            # echo -e "\`\`\`\n" >> "$MARKDOWN_FILE"
         fi
     else
         echo -e "## Repository: $repo_name\n" >> "$MARKDOWN_FILE"
