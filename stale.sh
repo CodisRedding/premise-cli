@@ -20,32 +20,34 @@ HIDE_EMPTY_REPOS=0
 # Help menu function
 print_help() {
     cat <<EOF
-Usage: $0 [--days N] [group_id] [--markdown] [--hide-empty] [-h|--help]
+Usage: $0 [-d N] [-g group] [-i id] [-s term] [-m] [-e] [-h]
 
 Find stale branches across GitLab repositories.
 
 Options:
-    --days N         Number of days to consider a branch stale (default: 90)
-    group_id         GitLab group path (default: premise-health/premise-development)
-    --markdown       Output report in markdown format (default: terminal)
-    --hide-empty     Do not display repositories with no stale branches found
-    -h, --help       Show this help menu and exit
+    -d, --days N         Number of days to consider a branch stale (default: 90)
+    -g, --group PATH     GitLab group path (default: premise-health/premise-development)
+    -i, --group-id ID    GitLab group ID (default: 109214032)
+    -s, --search TERM    Filter branches by name (regex)
+    -m, --markdown       Output report in markdown format (default: terminal)
+    -e, --hide-empty     Do not display repositories with no stale branches found
+    -h, --help           Show this help menu and exit
 
 Examples:
     # Basic usage (default: 90 days, terminal output, default group)
     $0
 
     # Set days threshold with flag
-    $0 --days 120
+    $0 -d 120
 
     # Hide repos with no stale branches
-    $0 --hide-empty
+    $0 -e
 
     # Output as markdown report (saved in reports/)
-    $0 --markdown
+    $0 -m
 
     # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
-    $0 --markdown --hide-empty --days 60
+    $0 -m -e -d 60
 EOF
 }
 
@@ -56,27 +58,27 @@ while [[ $# -gt 0 ]]; do
             print_help
             exit 0
             ;;
-        --markdown)
+        -m|--markdown)
             OUTPUT_FORMAT="markdown"
             shift
             ;;
-        --group)
+        -g|--group)
             GROUP_PATH="$2"
             shift 2
             ;;
-        --group-id)
+        -i|--group-id)
             GROUP_ID="$2"
             shift 2
             ;;
-        --search)
+        -s|--search)
             SEARCH_STRING="$2"
             shift 2
             ;;
-        --hide-empty)
+        -e|--hide-empty)
             HIDE_EMPTY_REPOS=1
             shift
             ;;
-        --days)
+        -d|--days)
             DAYS_THRESHOLD="$2"
             shift 2
             ;;
