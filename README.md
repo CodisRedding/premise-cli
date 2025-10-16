@@ -6,7 +6,7 @@ This repository provides a command-line toolkit for managing GitLab repositories
 
 The main entry point is the `premise.sh` script, which acts as a CLI dispatcher for all available commands:
 
-```
+```bash
 ./premise.sh <command> [options]
 ```
 
