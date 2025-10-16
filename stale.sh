@@ -1,9 +1,9 @@
 #!/bin/bash
+# Requires: glab, git, jq
 
 # Script to find stale branches across GitLab repositories
-# Usage: ./stale-branches.sh [days_threshold] [group_id]
 
-
+set -e
 
 REPORTS_DIR="reports"
 OUTPUT_FORMAT="terminal"
@@ -20,119 +20,43 @@ HIDE_EMPTY_REPOS=0
 # Help menu function
 print_help() {
     cat <<EOF
-Usage: $0 [-d N] [-g group] [-i id] [-s term] [-m] [-e] [-h]
+Usage: premise stale [options] [--group <group-path>] [--group-id <group-id>]
 
 Find stale branches across GitLab repositories.
 
 Options:
-    -d, --days N         Number of days to consider a branch stale (default: 90)
-    -g, --group PATH     GitLab group path (default: premise-health/premise-development)
-    -i, --group-id ID    GitLab group ID (default: 109214032)
-    -s, --search TERM    Filter branches by name (regex)
-    -m, --markdown       Output report in markdown format (default: terminal)
-    -e, --hide-empty     Do not display repositories with no stale branches found
-    -h, --help           Show this help menu and exit
+  -g, --group          GitLab group path (default: $DEFAULT_GROUP_PATH)
+  -i, --group-id       GitLab group ID (default: $DEFAULT_GROUP_ID)
+  -d, --days           Number of days to consider a branch stale (default: $DAYS_THRESHOLD)
+  -s, --search         Filter branches by name (regex)
+  -m, --markdown       Output report in markdown format (default: $OUTPUT_FORMAT)
+  -e, --hide-empty     Do not display repositories with no stale branches found
+  -h, --help           Show this help menu and exit
 
 Examples:
-    # Basic usage (default: 90 days, terminal output, default group)
-    ./stale.sh
+    # Find branches older than 60 days in the default group
+    premise stale -d 60
 
-    # Set days threshold with flag
-    ./stale.sh -d 120
+    # Find branches older than 30 days in a specific group ID, output as markdown
+    premise stale -i 109214032 -d 30 -m
 
-    # Hide repos with no stale branches
-    ./stale.sh -e
+    # Find branches with 'feature' in the name older than 45 days
+    premise stale -d 45 -s feature
 
-    # Output as markdown report (saved in reports/)
-    ./stale.sh -m
+    # Show help
+    premise stale --help
 
-    # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
-    ./stale.sh -m -e -d 60
+Requirements:
+  - glab (logged in): See https://glab.readthedocs.io/en/latest/quickstart.html
+  - git: For cloning repositories
+  - jq: For parsing JSON API responses
 EOF
 }
 
-# Parse options and positional arguments robustly
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -h|--help)
-            print_help
-            exit 0
-            ;;
-        -m|--markdown)
-            OUTPUT_FORMAT="markdown"
-            shift
-            ;;
-        -g|--group)
-            GROUP_PATH="$2"
-            shift 2
-            ;;
-        -i|--group-id)
-            GROUP_ID="$2"
-            shift 2
-            ;;
-        -s|--search)
-            SEARCH_STRING="$2"
-            shift 2
-            ;;
-        -e|--hide-empty)
-            HIDE_EMPTY_REPOS=1
-            shift
-            ;;
-        -d|--days)
-            DAYS_THRESHOLD="$2"
-            shift 2
-            ;;
-        [0-9]*)
-            DAYS_THRESHOLD="$1"
-            shift
-            ;;
-        *)
-            GROUP_PATH="$1"
-            shift
-            ;;
-    esac
-done
-
-
-# Set default group id if neither group nor group-id is provided
-if [ "$GROUP_PATH" = "$DEFAULT_GROUP_PATH" ] && [ -z "$GROUP_ID" ]; then
-    GROUP_ID="$DEFAULT_GROUP_ID"
-fi
-
-# Set timestamped markdown file in reports dir if markdown output
-if [ "$OUTPUT_FORMAT" = "markdown" ]; then
-    mkdir -p "$REPORTS_DIR"
-    TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
-    MARKDOWN_FILE="${REPORTS_DIR}/${TIMESTAMP}-stale-branches-report.md"
-fi
-
-# Calculate threshold date
-if [[ "$(uname)" == "Darwin" ]]; then
-    THRESHOLD_DATE=$(date -v-${DAYS_THRESHOLD}d +%Y-%m-%d)
-    DATE_EPOCH() { date -j -f "%Y-%m-%d" "$1" +%s; }
-    COMMIT_EPOCH() {
-        local input="$1"
-        # Remove milliseconds and convert timezone to +hhmm
-        local fixed=$(echo "$input" | sed -E 's/([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]+([+-][0-9]{2}):([0-9]{2})/\1\2\3/' | sed 's/Z$/+0000/')
-        date -j -f "%Y-%m-%dT%H:%M:%S%z" "$fixed" +%s 2>/dev/null
-    }
-else
-    THRESHOLD_DATE=$(date -d "${DAYS_THRESHOLD} days ago" +%Y-%m-%d)
-    DATE_EPOCH() { date -d "$1" +%s; }
-    COMMIT_EPOCH() {
-        local input="$1"
-        # Remove milliseconds and convert timezone to +hhmm
-        local fixed=$(echo "$input" | sed -E 's/([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]+([+-][0-9]{2}):([0-9]{2})/\1\2\3/' | sed 's/Z$/+0000/')
-        date -d "$fixed" +%s 2>/dev/null
-    }
-fi
-
-
-if [ "$OUTPUT_FORMAT" = "terminal" ]; then
-    echo "🔍 Finding branches older than ${DAYS_THRESHOLD} days (before ${THRESHOLD_DATE})"
-    echo "=================================================="
-fi
-
+# Helper to percent-encode slashes in group path
+encode_group_path() {
+  echo "$1" | sed 's/\//%2F/g'
+}
 
 # Output formatter: terminal
 format_terminal_repo() {
@@ -260,13 +184,93 @@ check_repo_branches() {
     fi
 }
 
-echo "🏁 Scan complete!"
-# Main execution
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            print_help
+            exit 0
+            ;;
+        -m|--markdown)
+            OUTPUT_FORMAT="markdown"
+            shift
+            ;;
+        -g|--group)
+            GROUP_PATH="$2"
+            shift 2
+            ;;
+        -i|--group-id)
+            GROUP_ID="$2"
+            shift 2
+            ;;
+        -s|--search)
+            SEARCH_STRING="$2"
+            shift 2
+            ;;
+        -e|--hide-empty)
+            HIDE_EMPTY_REPOS=1
+            shift
+            ;;
+        -d|--days)
+            DAYS_THRESHOLD="$2"
+            shift 2
+            ;;
+        *)
+            GROUP_PATH="$1"
+            shift
+            ;;
+    esac
+done
+
+# Set default group id if neither group nor group-id is provided
+if [ "$GROUP_PATH" = "$DEFAULT_GROUP_PATH" ] && [ -z "$GROUP_ID" ]; then
+    GROUP_ID="$DEFAULT_GROUP_ID"
+fi
+
+# Set timestamped markdown file in reports dir if markdown output
+if [ "$OUTPUT_FORMAT" = "markdown" ]; then
+    mkdir -p "$REPORTS_DIR"
+    TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
+    MARKDOWN_FILE="${REPORTS_DIR}/${TIMESTAMP}-stale-branches-report.md"
+fi
+
+# Calculate threshold date
+if [[ "$(uname)" == "Darwin" ]]; then
+    THRESHOLD_DATE=$(date -v-${DAYS_THRESHOLD}d +%Y-%m-%d)
+    DATE_EPOCH() { date -j -f "%Y-%m-%d" "$1" +%s; }
+    COMMIT_EPOCH() {
+        local input="$1"
+        # Remove milliseconds and convert timezone to +hhmm
+        local fixed=$(echo "$input" | sed -E 's/([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]+([+-][0-9]{2}):([0-9]{2})/\1\2\3/' | sed 's/Z$/+0000/')
+        date -j -f "%Y-%m-%dT%H:%M:%S%z" "$fixed" +%s 2>/dev/null
+    }
+else
+    THRESHOLD_DATE=$(date -d "${DAYS_THRESHOLD} days ago" +%Y-%m-%d)
+    DATE_EPOCH() { date -d "$1" +%s; }
+    COMMIT_EPOCH() {
+        local input="$1"
+        # Remove milliseconds and convert timezone to +hhmm
+        local fixed=$(echo "$input" | sed -E 's/([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]+([+-][0-9]{2}):([0-9]{2})/\1\2\3/' | sed 's/Z$/+0000/')
+        date -d "$fixed" +%s 2>/dev/null
+    }
+fi
+
+
+if [ "$OUTPUT_FORMAT" = "terminal" ]; then
+    echo "🔍 Finding branches older than ${DAYS_THRESHOLD} days (before ${THRESHOLD_DATE})"
+    if [ -n "$SEARCH_STRING" ]; then
+        echo " | Search: \`${SEARCH_STRING}\`"
+    fi
+    echo "=================================================="
+fi
+
+# Encode group path or use group ID
 if [ -n "$GROUP_ID" ]; then
     GROUP_REF="$GROUP_ID"
 else
-    GROUP_REF="$(echo "$GROUP_PATH" | sed 's/\//%2F/g')"
+    GROUP_REF="$(encode_group_path "$GROUP_PATH")"
 fi
+
 repos=$(glab api --paginate "groups/${GROUP_REF}/projects?include_subgroups=true")
 
 if [ $? -ne 0 ]; then
