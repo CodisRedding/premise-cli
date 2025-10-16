@@ -35,10 +35,10 @@ Scans all repositories in a GitLab group (and subgroups) for branches that have 
 
 | Option                  | Description                                                        |
 |-------------------------|--------------------------------------------------------------------|
-| `-g`, `--group PATH`    | GitLab group path (default: premise-health/premise-development)    |
-| `-i`, `--group-id ID`   | GitLab group ID (default: 109214032)                              |
-| `-d`, `--days N`        | Number of days to consider a branch stale (default: 90)            |
-| `-s`, `--search TERM`   | Filter branches by name (regex)                                    |
+| `-g`, `--group`         | GitLab group path (default: premise-health/premise-development)    |
+| `-i`, `--group-id`      | GitLab group ID (default: 109214032)                              |
+| `-d`, `--days`          | Number of days to consider a branch stale (default: 90)            |
+| `-s`, `--search`        | Filter branches by name (regex)                                    |
 | `-m`, `--markdown`      | Output report in markdown format (default: terminal)               |
 | `-e`, `--hide-empty`    | Do not display repos with no stale branches                        |
 | `-h`, `--help`          | Show help menu and exit                                            |
@@ -72,10 +72,10 @@ Clones all repositories in a GitLab group (and subgroups), preserving the group/
 
 | Option                  | Description                                                        |
 |-------------------------|--------------------------------------------------------------------|
-| `-g`, `--group PATH`    | GitLab group path (default: premise-health/premise-development)    |
-| `-i`, `--group-id ID`   | GitLab group ID (default: 109214032)                              |
-| `-c`, `--code-dir DIR`  | Directory to clone repos into (default: premise-health/premise-development) |
-| `--ignore repo1,repo2`  | Comma-separated list of repo names to skip                         |
+| `-g`, `--group`         | GitLab group path (default: premise-health/premise-development)    |
+| `-i`, `--group-id`      | GitLab group ID (default: 109214032)                              |
+| `-c`, `--code-dir`      | Directory to clone repos into (default: premise-health/premise-development) |
+| `--ignore`              | Comma-separated list of repo names to skip                         |
 | `-h`, `--help`          | Show help menu and exit                                            |
 
 **Examples:**
