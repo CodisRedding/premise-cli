@@ -15,7 +15,6 @@ Available commands:
 - `stale`  &mdash; Find and report stale branches across GitLab repositories
 - `clone`  &mdash; Clone all repositories in a group/subgroups, preserving directory structure
 
-
 See below for details on each command and usage examples.
 
 ---
