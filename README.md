@@ -1,73 +1,93 @@
-# Repo Cleanup
+# Premise CLI Toolkit
 
-This repository contains scripts and reports to help identify and clean up stale branches in your Git repositories.
+This repository provides a command-line toolkit for managing GitLab repositories at Premise Health. It includes scripts for cloning all repositories in a group and for generating reports on stale branches. The toolkit is designed to streamline repo management and cleanup for engineering teams.
 
-## Contents
+## Overview
 
-- `stale.sh`: Shell script to generate stale branch reports.
-- `reports/`: Directory containing markdown reports of stale branches.
+The main entry point is the `premise.sh` script, which acts as a CLI dispatcher for all available commands:
 
-## Usage
-
-Run the script with various options to customize the report:
-
-### Help Menu
-
-You can display usage instructions and options by running:
-
-```bash
-./stale.sh --help
+```
+./premise.sh <command> [options]
 ```
 
-This will print a help menu describing all available options, defaults, and examples.
+Available commands:
+
+- `stale`  &mdash; Find and report stale branches across GitLab repositories
+- `clone`  &mdash; Clone all repositories in a group/subgroups, preserving directory structure
+
+
+See below for details on each command and usage examples.
+
+---
+
+## Commands
+
+### `stale` &mdash; Find Stale Branches
+
+Scans all repositories in a GitLab group (and subgroups) for branches that have not had commits in a specified number of days. Can output to terminal or as a markdown report.
+
+**Usage:**
 
 ```bash
-Usage: ./stale.sh [-d N] [-g group] [-i id] [-s term] [-m] [-e] [-h]
-
-Options:
-    -d, --days N         Number of days to consider a branch stale (default: 90)
-    -g, --group PATH     GitLab group path (default: premise-health/premise-development)
-    -i, --group-id ID    GitLab group ID (default: 109214032)
-    -s, --search TERM    Filter branches by name (regex)
-    -m, --markdown       Output report in markdown format (default: terminal)
-    -e, --hide-empty     Do not display repositories with no stale branches found
-    -h, --help           Show this help menu and exit
-
-Examples:
-    # Basic usage (default: 90 days, terminal output, default group)
-    ./stale.sh
-
-    # Set days threshold with flag
-    ./stale.sh -d 120
-
-    # Hide repos with no stale branches
-    ./stale.sh -e
-
-    # Output as markdown report (saved in reports/)
-    ./stale.sh -m
-
-    # Combine options (e.g., markdown report for branches older than 60 days, hide empty)
-    ./stale.sh -m -e -d 60
+./premise.sh stale [options]
 ```
 
-### Example Output
+**Options:**
 
-**Terminal Output:**
-![Terminal output example](term.png)
+| Option                  | Description                                                        |
+|-------------------------|--------------------------------------------------------------------|
+| `-g`, `--group PATH`    | GitLab group path (default: premise-health/premise-development)    |
+| `-i`, `--group-id ID`   | GitLab group ID (default: 109214032)                              |
+| `-d`, `--days N`        | Number of days to consider a branch stale (default: 90)            |
+| `-s`, `--search TERM`   | Filter branches by name (regex)                                    |
+| `-m`, `--markdown`      | Output report in markdown format (default: terminal)               |
+| `-e`, `--hide-empty`    | Do not display repos with no stale branches                        |
+| `-h`, `--help`          | Show help menu and exit                                            |
 
-**Markdown Report Output:**
-![Markdown report example](markdown.png)
+**Examples:**
 
-## Requirements
+```bash
+# Basic usage (default: 90 days, default group)
+./premise.sh stale
 
-- Git installed and accessible in your PATH
-- [jq](https://stedolan.github.io/jq/) (JSON processor) installed and accessible in your PATH
-- [glab](https://github.com/profclems/glab) (GitLab CLI) installed and accessible in your PATH
+# Find branches older than 60 days, output as markdown
+./premise.sh stale -d 60 -m
 
-## Contributing
+# Filter by branch name
+./premise.sh stale -s feature
+```
 
-Feel free to submit issues or pull requests to improve the scripts or reporting process.
+---
 
-## License
+### `clone` &mdash; Clone All Repos in Group
 
-MIT License
+Clones all repositories in a GitLab group (and subgroups), preserving the group/subgroup directory structure. Useful for onboarding or mass updates.
+
+**Usage:**
+
+```bash
+./premise.sh clone [options]
+```
+
+**Options:**
+
+| Option                  | Description                                                        |
+|-------------------------|--------------------------------------------------------------------|
+| `-g`, `--group PATH`    | GitLab group path (default: premise-health/premise-development)    |
+| `-i`, `--group-id ID`   | GitLab group ID (default: 109214032)                              |
+| `-c`, `--code-dir DIR`  | Directory to clone repos into (default: premise-health/premise-development) |
+| `--ignore repo1,repo2`  | Comma-separated list of repo names to skip                         |
+| `-h`, `--help`          | Show help menu and exit                                            |
+
+**Examples:**
+
+```bash
+# Clone all repos in the default group
+./premise.sh clone
+
+# Clone into a custom directory
+./premise.sh clone -c ~/code/premise
+
+# Ignore certain repos
+./premise.sh clone --ignore repo1,repo2
+```
